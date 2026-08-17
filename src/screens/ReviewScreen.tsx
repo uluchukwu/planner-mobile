@@ -6,11 +6,13 @@ import {
   moveTaskToNextWeek,
   rescheduleTaskToDate,
   archiveTask,
+  getCachedAt,
   ApiError,
   ReviewResponse,
   ReviewFields,
 } from "../api";
 import { clearToken } from "../tokenStorage";
+import { CacheBanner } from "../components/CacheBanner";
 
 const FIELDS: { key: keyof ReviewFields; label: string }[] = [
   { key: "wentWell", label: "What went well?" },
@@ -43,6 +45,7 @@ export function ReviewScreen({
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [cachedAt, setCachedAt] = useState<number | null>(null);
   const [fields, setFields] = useState<ReviewFields>(EMPTY_FIELDS);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
@@ -53,6 +56,7 @@ export function ReviewScreen({
       const result = await fetchReview(initialDate);
       setData(result);
       setFields(result.review);
+      setCachedAt(getCachedAt(result));
       setError(null);
     } catch (e) {
       if (e instanceof ApiError && e.status === 401) {
@@ -141,6 +145,7 @@ export function ReviewScreen({
       </Pressable>
       <Text style={styles.title}>Weekly review</Text>
       <Text style={styles.subtitle}>{data.weekLabel}</Text>
+      {cachedAt !== null && <CacheBanner savedAt={cachedAt} />}
 
       <View style={styles.statsRow}>
         <View style={styles.statCard}>

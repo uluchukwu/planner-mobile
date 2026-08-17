@@ -1,5 +1,6 @@
 import { Platform } from "react-native";
 import * as SecureStore from "expo-secure-store";
+import { clearCache } from "./cache";
 
 // expo-secure-store has no web implementation (native iOS/Android/tvOS only, per its
 // own docs) — expo start --web is the only target this environment can actually run
@@ -26,7 +27,11 @@ export async function loadToken(): Promise<string | null> {
 export async function clearToken(): Promise<void> {
   if (Platform.OS === "web") {
     window.localStorage.removeItem(KEY);
-    return;
+  } else {
+    await SecureStore.deleteItemAsync(KEY);
   }
-  await SecureStore.deleteItemAsync(KEY);
+  // Every sign-out path (explicit and 401-triggered) goes through here — the one
+  // choke point to purge cached responses so a signed-out session can't read back
+  // the previous user's stale data after someone else logs in on the same device.
+  await clearCache();
 }

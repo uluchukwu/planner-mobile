@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useState } from "react";
 import { View, Text, ScrollView, Pressable, TextInput, StyleSheet, ActivityIndicator, RefreshControl } from "react-native";
-import { fetchGoals, createGoal, deleteGoal, toggleGoalStar, ApiError, GoalsResponse } from "../api";
+import { fetchGoals, createGoal, deleteGoal, toggleGoalStar, getCachedAt, ApiError, GoalsResponse } from "../api";
 import { clearToken } from "../tokenStorage";
+import { CacheBanner } from "../components/CacheBanner";
 
 export function GoalsScreen({ onLoggedOut }: { onLoggedOut: () => void }) {
   const [year, setYear] = useState(new Date().getFullYear());
@@ -9,6 +10,7 @@ export function GoalsScreen({ onLoggedOut }: { onLoggedOut: () => void }) {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [cachedAt, setCachedAt] = useState<number | null>(null);
   const [newYearGoal, setNewYearGoal] = useState("");
   const [newMonthGoal, setNewMonthGoal] = useState("");
 
@@ -16,6 +18,7 @@ export function GoalsScreen({ onLoggedOut }: { onLoggedOut: () => void }) {
     try {
       const result = await fetchGoals(forYear);
       setData(result);
+      setCachedAt(getCachedAt(result));
       setError(null);
     } catch (e) {
       if (e instanceof ApiError && e.status === 401) {
@@ -104,6 +107,8 @@ export function GoalsScreen({ onLoggedOut }: { onLoggedOut: () => void }) {
           </Pressable>
         </View>
       </View>
+
+      {cachedAt !== null && <CacheBanner savedAt={cachedAt} />}
 
       {data.yearGoals.length === 0 ? (
         <Text style={styles.empty}>No yearly goals yet.</Text>

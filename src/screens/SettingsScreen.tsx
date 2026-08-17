@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useState } from "react";
 import { View, Text, ScrollView, Pressable, TextInput, StyleSheet, ActivityIndicator, Switch } from "react-native";
-import { fetchSettings, saveSettings, logout, ApiError, SettingsResponse, Weekday, ThemePreference } from "../api";
+import { fetchSettings, saveSettings, logout, getCachedAt, ApiError, SettingsResponse, Weekday, ThemePreference } from "../api";
 import { clearToken } from "../tokenStorage";
+import { CacheBanner } from "../components/CacheBanner";
 
 const WEEKDAYS: { value: Weekday; label: string }[] = [
   { value: "MONDAY", label: "Mon" },
@@ -23,6 +24,7 @@ export function SettingsScreen({ onLoggedOut }: { onLoggedOut: () => void }) {
   const [data, setData] = useState<SettingsResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [cachedAt, setCachedAt] = useState<number | null>(null);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
@@ -31,6 +33,7 @@ export function SettingsScreen({ onLoggedOut }: { onLoggedOut: () => void }) {
     try {
       const result = await fetchSettings();
       setData(result);
+      setCachedAt(getCachedAt(result));
       setError(null);
     } catch (e) {
       if (e instanceof ApiError && e.status === 401) {
@@ -95,6 +98,7 @@ export function SettingsScreen({ onLoggedOut }: { onLoggedOut: () => void }) {
     <ScrollView style={styles.container} contentContainerStyle={{ paddingBottom: 40 }}>
       <Text style={styles.title}>Settings</Text>
       <Text style={styles.subtitle}>{data.email}</Text>
+      {cachedAt !== null && <CacheBanner savedAt={cachedAt} />}
 
       <Text style={styles.fieldLabel}>Name</Text>
       <TextInput style={styles.input} value={data.name} onChangeText={(name) => setData((prev) => (prev ? { ...prev, name } : prev))} />

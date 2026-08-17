@@ -8,11 +8,13 @@ import {
   addChecklistItem,
   toggleChecklistItem,
   deleteChecklistItem,
+  getCachedAt,
   ApiError,
   WeekResponse,
 } from "../api";
 import { clearToken } from "../tokenStorage";
 import { addDays, todayKey } from "../dateUtils";
+import { CacheBanner } from "../components/CacheBanner";
 
 export function WeekScreen({
   onLoggedOut,
@@ -28,6 +30,7 @@ export function WeekScreen({
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [cachedAt, setCachedAt] = useState<number | null>(null);
   const [priorityError, setPriorityError] = useState<string | null>(null);
   const [newGoalTitle, setNewGoalTitle] = useState("");
   const [newChecklistLabel, setNewChecklistLabel] = useState("");
@@ -36,6 +39,7 @@ export function WeekScreen({
     try {
       const result = await fetchWeek(forDate);
       setData(result);
+      setCachedAt(getCachedAt(result));
       setError(null);
     } catch (e) {
       if (e instanceof ApiError && e.status === 401) {
@@ -157,6 +161,9 @@ export function WeekScreen({
           </Pressable>
         </View>
       </View>
+
+      {cachedAt !== null && <CacheBanner savedAt={cachedAt} />}
+
       <View style={styles.dayNav}>
         <Pressable style={styles.navButton} onPress={() => setAnchorDate((d) => addDays(d, -7))}>
           <Text style={styles.navButtonText}>← Prev</Text>

@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useState } from "react";
 import { View, Text, ScrollView, Pressable, TextInput, StyleSheet, ActivityIndicator, RefreshControl } from "react-native";
-import { fetchExpenses, createExpense, deleteExpense, ApiError, ExpensesResponse } from "../api";
+import { fetchExpenses, createExpense, deleteExpense, getCachedAt, ApiError, ExpensesResponse } from "../api";
 import { clearToken } from "../tokenStorage";
 import { todayKey } from "../dateUtils";
+import { CacheBanner } from "../components/CacheBanner";
 
 function shiftMonth(monthKey: string, delta: number): string {
   const [y, m] = monthKey.split("-").map(Number);
@@ -29,6 +30,7 @@ export function ExpensesScreen({ onLoggedOut }: { onLoggedOut: () => void }) {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [cachedAt, setCachedAt] = useState<number | null>(null);
   const [adding, setAdding] = useState(false);
   const [amount, setAmount] = useState("");
   const [description, setDescription] = useState("");
@@ -37,6 +39,7 @@ export function ExpensesScreen({ onLoggedOut }: { onLoggedOut: () => void }) {
     try {
       const result = await fetchExpenses(forMonth);
       setData(result);
+      setCachedAt(getCachedAt(result));
       setError(null);
     } catch (e) {
       if (e instanceof ApiError && e.status === 401) {
@@ -108,6 +111,9 @@ export function ExpensesScreen({ onLoggedOut }: { onLoggedOut: () => void }) {
           </Pressable>
         </View>
       </View>
+
+      {cachedAt !== null && <CacheBanner savedAt={cachedAt} />}
+
       <Text style={styles.total}>{formatCurrency(data.total, data.currency)} total</Text>
 
       {data.breakdown.length > 0 && (

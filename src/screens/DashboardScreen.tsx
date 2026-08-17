@@ -1,18 +1,21 @@
 import { useCallback, useEffect, useState } from "react";
 import { View, Text, ScrollView, StyleSheet, ActivityIndicator, RefreshControl } from "react-native";
-import { fetchDashboard, ApiError, DashboardResponse } from "../api";
+import { fetchDashboard, getCachedAt, ApiError, DashboardResponse } from "../api";
 import { clearToken } from "../tokenStorage";
+import { CacheBanner } from "../components/CacheBanner";
 
 export function DashboardScreen({ onLoggedOut }: { onLoggedOut: () => void }) {
   const [data, setData] = useState<DashboardResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [cachedAt, setCachedAt] = useState<number | null>(null);
 
   const load = useCallback(async () => {
     try {
       const result = await fetchDashboard();
       setData(result);
+      setCachedAt(getCachedAt(result));
       setError(null);
     } catch (e) {
       if (e instanceof ApiError && e.status === 401) {
@@ -57,6 +60,7 @@ export function DashboardScreen({ onLoggedOut }: { onLoggedOut: () => void }) {
     <ScrollView style={styles.container} contentContainerStyle={{ paddingBottom: 40 }} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />}>
       <Text style={styles.title}>Dashboard</Text>
       <Text style={styles.subtitle}>{data.dateLabel}</Text>
+      {cachedAt !== null && <CacheBanner savedAt={cachedAt} />}
 
       <View style={styles.card}>
         <Text style={styles.cardLabel}>Today</Text>

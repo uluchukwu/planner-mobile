@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useState } from "react";
 import { View, Text, FlatList, Pressable, TextInput, StyleSheet, ActivityIndicator, RefreshControl } from "react-native";
-import { fetchDay, toggleTask, createTask, ApiError, TodayResponse, TodayTask } from "../api";
+import { fetchDay, toggleTask, createTask, getCachedAt, ApiError, TodayResponse, TodayTask } from "../api";
 import { clearToken } from "../tokenStorage";
 import { addDays, todayKey } from "../dateUtils";
+import { CacheBanner } from "../components/CacheBanner";
 
 export function TodayScreen({ onLoggedOut, initialDate }: { onLoggedOut: () => void; initialDate?: string }) {
   const [date, setDate] = useState(initialDate ?? todayKey());
@@ -10,12 +11,14 @@ export function TodayScreen({ onLoggedOut, initialDate }: { onLoggedOut: () => v
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [cachedAt, setCachedAt] = useState<number | null>(null);
   const [newTaskTitle, setNewTaskTitle] = useState("");
 
   const load = useCallback(async (forDate: string) => {
     try {
       const result = await fetchDay(forDate);
       setData(result);
+      setCachedAt(getCachedAt(result));
       setError(null);
     } catch (e) {
       if (e instanceof ApiError && e.status === 401) {
@@ -95,6 +98,8 @@ export function TodayScreen({ onLoggedOut, initialDate }: { onLoggedOut: () => v
           <Text style={styles.signOut}>Sign out</Text>
         </Pressable>
       </View>
+
+      {cachedAt !== null && <CacheBanner savedAt={cachedAt} />}
 
       <View style={styles.dayNav}>
         <Pressable style={styles.navButton} onPress={() => setDate((d) => addDays(d, -1))}>

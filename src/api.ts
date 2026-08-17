@@ -1,4 +1,7 @@
 import { loadToken } from "./tokenStorage";
+import { saveToCache, loadFromCache, markAsCached } from "./cache";
+
+export { getCachedAt } from "./cache";
 
 // `localhost` resolves to the browser's own machine when running `expo start --web`
 // (the only target verified in this environment — no Android SDK/emulator available),
@@ -18,12 +21,31 @@ export class ApiError extends Error {
 async function request<T>(path: string, options: RequestInit = {}, token?: string | null): Promise<T> {
   const headers: Record<string, string> = { "Content-Type": "application/json", ...(options.headers as Record<string, string>) };
   if (token) headers.Authorization = `Bearer ${token}`;
+  const isGet = (options.method ?? "GET").toUpperCase() === "GET";
 
-  const res = await fetch(`${API_BASE_URL}${path}`, { ...options, headers });
+  let res: Response;
+  try {
+    res = await fetch(`${API_BASE_URL}${path}`, { ...options, headers });
+  } catch {
+    // fetch() throwing (as opposed to resolving with a non-2xx status) means the
+    // request never reached the server at all — no connection, not a real HTTP error.
+    // Only GETs fall back to cache: this is a read-only cache, mutations made offline
+    // are neither buffered nor silently served a stale "success."
+    if (isGet) {
+      const cached = await loadFromCache<T>(path);
+      if (cached) return markAsCached(cached.data, cached.savedAt);
+    }
+    throw new ApiError("No connection, and no saved data available.", 0);
+  }
+
   const body = await res.json().catch(() => null);
   if (!res.ok) {
+    // A real response came back — even 401 — so this is never a cache-fallback case.
+    // Serving stale data instead of honoring a 401 would mean a signed-out session
+    // keeps looking logged in.
     throw new ApiError(body?.error ?? `Request failed (${res.status})`, res.status);
   }
+  if (isGet) void saveToCache(path, body);
   return body as T;
 }
 

@@ -1,19 +1,22 @@
 import { useCallback, useEffect, useState } from "react";
 import { View, Text, ScrollView, Pressable, TextInput, StyleSheet, ActivityIndicator, RefreshControl } from "react-native";
-import { fetchHabits, createHabit, toggleHabitCompletion, setHabitArchived, deleteHabit, ApiError, HabitRow } from "../api";
+import { fetchHabits, createHabit, toggleHabitCompletion, setHabitArchived, deleteHabit, getCachedAt, ApiError, HabitRow } from "../api";
 import { clearToken } from "../tokenStorage";
+import { CacheBanner } from "../components/CacheBanner";
 
 export function HabitsScreen({ onLoggedOut }: { onLoggedOut: () => void }) {
   const [habits, setHabits] = useState<HabitRow[] | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [cachedAt, setCachedAt] = useState<number | null>(null);
   const [newHabitName, setNewHabitName] = useState("");
 
   const load = useCallback(async () => {
     try {
       const result = await fetchHabits();
       setHabits(result);
+      setCachedAt(getCachedAt(result));
       setError(null);
     } catch (e) {
       if (e instanceof ApiError && e.status === 401) {
@@ -89,6 +92,7 @@ export function HabitsScreen({ onLoggedOut }: { onLoggedOut: () => void }) {
   return (
     <ScrollView style={styles.container} contentContainerStyle={{ paddingBottom: 40 }} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />}>
       <Text style={styles.title}>Habits</Text>
+      {cachedAt !== null && <CacheBanner savedAt={cachedAt} />}
 
       {active.length === 0 ? (
         <Text style={styles.empty}>No habits yet. What&apos;s worth showing up for daily?</Text>

@@ -1,13 +1,18 @@
 # Planner Mobile
 
-The Phase 6 mobile client for the [Planner](C:\programming\Planner) web app. Talks to that app's `/api/mobile/*` Route Handlers over HTTP — it does not connect to Postgres directly, and shares no code with the web app yet (see "Code sharing" below).
+The Phase 6 mobile client for the [Planner](C:\programming\Planner) web app. Talks to that app's `/api/mobile/*` Route Handlers over HTTP — it does not connect to Postgres directly, and shares no code with the web app by choice, not by omission (see "Code sharing" below).
 
-## Scope (this pass)
+## Scope — Phase 6 is closed
 
-Phase 6 is being built in an agreed order: **screens first**, then offline sync, push notifications, and code sharing as separate later passes (see the web app's `docs/ROADMAP.md`). All planner screens are now built, including Settings — the mobile app has full feature parity with the web app's core planner surface. Offline sync is scoped, deliberately, to a **read-only cache** — see "Offline behavior" below for exactly what that does and doesn't cover.
+Phase 6 was built in an agreed order: **screens first**, then offline sync, push notifications, and code sharing as separate later passes. All four have now been resolved — three built, one declined — and the phase is closed as of this pass, not left open pending a "later" that was never scheduled.
 
 - **Built:** login, eight screens — Dashboard, Today (with day navigation and inline task creation), Week (priority goals with the star toggle, a 7-day summary that opens into Today, the habit tracker grid, the weekly checklist, a link into Weekly review), Goals (year + month, add/delete/star), Habits (create/toggle/archive/restore/delete with streak and completion stats), Expenses (month view, category breakdown, add/delete), Weekly review (stats, goal progress, incomplete-task triage — move to next week / reschedule to a specific day / archive — and the six-question reflection form; reached from the Week screen's "Weekly review →" link, not the tab bar, mirroring the web app's own non-nav-item treatment), Settings (name, week-start day, theme, working hours, currency, notifications toggle, sign out — mirrors the web sidebar's persistent "Settings" nav item, so it's a tab here too) — and a read-only offline cache covering every `GET` screen.
-- **Not built:** signup (create an account via the web app's `/signup` first), offline *writes* (see above — reads only), push notifications (investigated, found infeasible to build *and verify* in this environment — see "Push notifications" below, not merely deferred), code sharing with the web app. Drag-and-drop was not ported either — native mobile UIs don't really want desktop drag-and-drop anyway; the Week screen's day rows link into Today instead.
+- **Not built, and why each one stopped:**
+  - Offline *writes* — scoped out from the start (see "Offline behavior" below); the read-only cache was the explicit, asked-for scope.
+  - Push notifications — investigated, found infeasible to build *and verify* in this environment (see "Push notifications" below), not merely deferred.
+  - Code sharing with the web app — investigated, declined by explicit choice (see "Code sharing" below), not merely deferred.
+  - Signup — create an account via the web app's `/signup` first; this was never in scope for mobile.
+- Drag-and-drop was not ported either — native mobile UIs don't really want desktop drag-and-drop anyway; the Week screen's day rows link into Today instead.
 - **Known limitation:** the Goals screen's year navigation works, but month goals always show the current calendar month regardless of the selected year — `GoalsScreen` only ever calls `fetchGoals(year)`, and `monthKey` defaults server-side to "now". Month navigation isn't wired up yet.
 
 ## Running it
@@ -62,7 +67,11 @@ Seven tabs (Dashboard, Today, Week, Goals, Habits, Expenses, Settings) plus one 
 
 ## Code sharing with the web app
 
-None yet. The web app's pure logic (`lib/date/week.ts`, `lib/habits.ts`, `lib/progress.ts`, `lib/expenses.ts`, `lib/format.ts`) has no Next.js/DOM dependency and could in principle be extracted into a shared package — this app currently duplicates a small slice of it directly (`src/dateUtils.ts` has its own `addDays`/`todayKey`, and `ExpensesScreen.tsx` has its own tiny `formatCurrency`/`shiftMonth`/`formatMonthLabel`) rather than importing across repos. That duplication is deliberate and small (a few lines each) — real code-sharing needs an npm/pnpm workspace restructuring of the *web* repo too, which is its own future pass, not a change to make in passing.
+**Investigated and declined by explicit choice — not left open pending a future pass.** The web app's pure logic (`lib/date/week.ts`, `lib/habits.ts`, `lib/progress.ts`, `lib/expenses.ts`, `lib/format.ts`) has no Next.js/DOM dependency and could in principle be extracted into a shared package; this app duplicates a small slice of it directly instead (`src/dateUtils.ts`'s own `addDays`/`todayKey`, `ExpensesScreen.tsx`'s own tiny `formatCurrency`/`shiftMonth`/`formatMonthLabel` — roughly 25 lines total).
+
+Two repos with independent git histories can't share code without either a workspace restructure (moving both under one root, `packages/core`) or a published package (`@planner/core` on a registry, version-bumped between them). Both were weighed, not just the first: a restructure risks the web repo's Prisma generated-client output path, the Turbopack/NTFS-junction requirement documented in `ARCHITECTURE.md`, its checked-in Playwright suite, and its 37 Vitest tests — all real, working infrastructure — for roughly 25 lines of pure, already-unit-tested, non-safety-critical duplication. A published package avoids the restructure but adds a registry dependency and a version-bump loop for code this small. Asked directly which of "don't," "restructure," or "publish" — the answer was **don't**.
+
+This is a different call than the one made for the weekly-priority-limit transaction, deliberately: that logic is safety-critical (a wrong answer means the app's one non-negotiable rule silently drifts between platforms), so it was extracted into `src/lib/core/weeklyPriority.ts` on the web side and called from both surfaces — see `../Planner/docs/ARCHITECTURE.md`'s "Mobile API surface". Date math and currency formatting have no such failure mode; duplicating them costs nothing a monorepo restructure wouldn't cost more to avoid.
 
 ## `npm audit`
 

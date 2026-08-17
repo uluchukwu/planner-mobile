@@ -9,11 +9,13 @@ import { GoalsScreen } from "./src/screens/GoalsScreen";
 import { HabitsScreen } from "./src/screens/HabitsScreen";
 import { ExpensesScreen } from "./src/screens/ExpensesScreen";
 import { ReviewScreen } from "./src/screens/ReviewScreen";
+import { SettingsScreen } from "./src/screens/SettingsScreen";
 import { loadToken } from "./src/tokenStorage";
 
 // "review" is deliberately not in TABS — like the web app, it's reached via a link
-// from the Week screen, not a top-level nav item.
-type Tab = "dashboard" | "today" | "week" | "goals" | "habits" | "expenses" | "review";
+// from the Week screen, not a top-level nav item. Settings mirrors the web sidebar's
+// NAV_ITEMS, where it IS a persistent nav item, so it gets a tab.
+type Tab = "dashboard" | "today" | "week" | "goals" | "habits" | "expenses" | "settings" | "review";
 
 const TABS: { key: Tab; label: string }[] = [
   { key: "dashboard", label: "Home" },
@@ -22,6 +24,7 @@ const TABS: { key: Tab; label: string }[] = [
   { key: "goals", label: "Goals" },
   { key: "habits", label: "Habits" },
   { key: "expenses", label: "Expenses" },
+  { key: "settings", label: "Settings" },
 ];
 
 // No router — six tabs gated by simple state is less machinery than expo-router for
@@ -83,6 +86,7 @@ export default function App() {
         {activeTab === "goals" && <GoalsScreen onLoggedOut={handleLoggedOut} />}
         {activeTab === "habits" && <HabitsScreen onLoggedOut={handleLoggedOut} />}
         {activeTab === "expenses" && <ExpensesScreen onLoggedOut={handleLoggedOut} />}
+        {activeTab === "settings" && <SettingsScreen onLoggedOut={handleLoggedOut} />}
         {activeTab === "review" && (
           <ReviewScreen onLoggedOut={handleLoggedOut} initialDate={selectedDate} onBack={() => setActiveTab("week")} />
         )}

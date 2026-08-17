@@ -246,3 +246,33 @@ export type DashboardResponse = {
 export async function fetchDashboard(): Promise<DashboardResponse> {
   return authed("/api/mobile/dashboard", { method: "GET" });
 }
+
+// --- Settings ---
+
+export type Weekday = "MONDAY" | "TUESDAY" | "WEDNESDAY" | "THURSDAY" | "FRIDAY" | "SATURDAY" | "SUNDAY";
+export type ThemePreference = "LIGHT" | "DARK" | "SYSTEM";
+export type SettingsResponse = {
+  name: string;
+  email: string;
+  weekStartsOn: Weekday;
+  currency: string;
+  theme: ThemePreference;
+  defaultWorkStartHour: number;
+  defaultWorkEndHour: number;
+  notificationsEnabled: boolean;
+};
+
+export async function fetchSettings(): Promise<SettingsResponse> {
+  return authed("/api/mobile/settings", { method: "GET" });
+}
+
+export async function saveSettings(fields: Omit<SettingsResponse, "email">) {
+  return authed<{ ok: true }>("/api/mobile/settings", { method: "POST", body: JSON.stringify(fields) });
+}
+
+// Best-effort: revokes the session server-side so the token can't be replayed after
+// sign-out. If this fails (offline, server down), still clear the local token — the
+// device shouldn't stay "logged in" just because the revoke call didn't land.
+export async function logout(): Promise<void> {
+  await authed("/api/mobile/logout", { method: "POST" }).catch(() => {});
+}

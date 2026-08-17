@@ -4,10 +4,10 @@ The Phase 6 mobile client for the [Planner](C:\programming\Planner) web app. Tal
 
 ## Scope (this pass)
 
-Phase 6 is being built in an agreed order: **screens first**, then offline sync, push notifications, and code sharing as separate later passes (see the web app's `docs/ROADMAP.md`).
+Phase 6 is being built in an agreed order: **screens first**, then offline sync, push notifications, and code sharing as separate later passes (see the web app's `docs/ROADMAP.md`). All planner screens are now built, including Settings — the mobile app has full feature parity with the web app's core planner surface.
 
-- **Built this pass:** login, and seven screens — Dashboard, Today (with day navigation and inline task creation), Week (priority goals with the star toggle, a 7-day summary that opens into Today, the habit tracker grid, the weekly checklist, a link into Weekly review), Goals (year + month, add/delete/star), Habits (create/toggle/archive/restore/delete with streak and completion stats), Expenses (month view, category breakdown, add/delete), Weekly review (stats, goal progress, incomplete-task triage — move to next week / reschedule to a specific day / archive — and the six-question reflection form). Reached from the Week screen's "Weekly review →" link, not the bottom tab bar, mirroring the web app's own non-nav-item treatment.
-- **Not built:** signup (create an account via the web app's `/signup` first), Settings, offline-first local persistence/sync, push notifications, code sharing with the web app. Drag-and-drop was not ported either — native mobile UIs don't really want desktop drag-and-drop anyway; the Week screen's day rows link into Today instead.
+- **Built:** login, and eight screens — Dashboard, Today (with day navigation and inline task creation), Week (priority goals with the star toggle, a 7-day summary that opens into Today, the habit tracker grid, the weekly checklist, a link into Weekly review), Goals (year + month, add/delete/star), Habits (create/toggle/archive/restore/delete with streak and completion stats), Expenses (month view, category breakdown, add/delete), Weekly review (stats, goal progress, incomplete-task triage — move to next week / reschedule to a specific day / archive — and the six-question reflection form; reached from the Week screen's "Weekly review →" link, not the tab bar, mirroring the web app's own non-nav-item treatment), Settings (name, week-start day, theme, working hours, currency, notifications toggle, sign out — mirrors the web sidebar's persistent "Settings" nav item, so it's a tab here too).
+- **Not built:** signup (create an account via the web app's `/signup` first), offline-first local persistence/sync, push notifications, code sharing with the web app. Drag-and-drop was not ported either — native mobile UIs don't really want desktop drag-and-drop anyway; the Week screen's day rows link into Today instead.
 - **Known limitation:** the Goals screen's year navigation works, but month goals always show the current calendar month regardless of the selected year — `GoalsScreen` only ever calls `fetchGoals(year)`, and `monthKey` defaults server-side to "now". Month navigation isn't wired up yet.
 
 ## Running it
@@ -26,14 +26,16 @@ Weekly review was verified with its own pass: seeded 3 incomplete tasks + a week
 
 The weekly-priority cap (max 4) was separately verified against its rejection path, not just the happy path: a Playwright pass created 5 weekly goals, starred 4 successfully, then starred the 5th and confirmed the server's rejection message ("This week's top 4 priorities are full. Remove one first.") actually renders in the UI, the on-screen count stays at 4/4, and a server-side `/api/mobile/week` cross-check confirms exactly 4 ranks persisted. This caught a real bug: `WeekScreen.handleTogglePriority` originally expected the failed request to *return* `{ error }`, but `api.ts`'s `request()` throws `ApiError` on any non-2xx response, so the 400 the server sends for a full week never reached that branch — the rejection was a silent no-op (an unhandled promise rejection) rather than a shown error. Fixed by having `handleTogglePriority` catch `ApiError` and surface `e.message` instead.
 
+Settings was verified with its own pass: loaded the screen, changed every field (name, week-start day, theme, working hours, currency, notifications toggle), saved, and cross-checked at the server via `GET /api/mobile/settings` that all six fields actually persisted. Sign-out was verified to do more than clear local storage: after tapping "Sign out", a direct request using the old (pre-logout) token got a 401 back from the server — confirming `POST /api/mobile/logout` actually deletes the session row (`deleteSessionForToken` in the web app), not just that the mobile app forgot its copy of the token. Zero console errors.
+
 Not verified in this environment, and worth treating as unproven until someone runs it on real hardware:
 - Native `expo-secure-store` token storage (`src/tokenStorage.ts` branches to `localStorage` on web — that's the path actually tested; the native branch is correct per Expo's docs but has never executed).
-- Native navigation gestures, safe-area insets, keyboard behavior, and how the six-tab bottom bar actually feels on a real small screen (it was only ever viewed at a fixed 420×900 browser viewport).
+- Native navigation gestures, safe-area insets, keyboard behavior, and how the seven-tab bottom bar actually feels on a real small screen (it was only ever viewed at a fixed 420×900 browser viewport).
 - Anything Android/iOS-specific in general.
 
 ## Why no router
 
-Six tabs (Dashboard, Today, Week, Goals, Habits, Expenses) plus one non-tab screen (Weekly review, reached via a link from Week) gated by simple `useState` in `App.tsx` — no nested navigation, no back-stacks, no deep links. A consequence worth knowing: a full page reload in the `--web` target drops back to the Today tab, since `activeTab` is in-memory state, not URL state. This is less machinery than wiring `expo-router` for a shape this flat. Add `expo-router` when a screen needs its own back-stack (e.g. a task-detail screen pushed from Today) rather than before.
+Seven tabs (Dashboard, Today, Week, Goals, Habits, Expenses, Settings) plus one non-tab screen (Weekly review, reached via a link from Week) gated by simple `useState` in `App.tsx` — no nested navigation, no back-stacks, no deep links. A consequence worth knowing: a full page reload in the `--web` target drops back to the Today tab, since `activeTab` is in-memory state, not URL state. This is less machinery than wiring `expo-router` for a shape this flat. Add `expo-router` when a screen needs its own back-stack (e.g. a task-detail screen pushed from Today) rather than before.
 
 ## Code sharing with the web app
 
@@ -76,3 +78,6 @@ All under `../Planner/src/app/api/mobile/`, auth via `Authorization: Bearer <tok
 | POST | `/tasks/:id/move-next-week` | move an incomplete task to next week's inbox |
 | POST | `/tasks/:id/reschedule` | `{ date }` → move a task to a specific day |
 | POST | `/tasks/:id/archive` | archive a task (still counts toward "planned") |
+| GET | `/settings` | current preferences (name, week-start day, theme, working hours, currency, notifications) |
+| POST | `/settings` | update preferences (server-validates enum/range fields, unlike the web `<select>`) |
+| POST | `/logout` | revoke this device's session server-side (deletes the `Session` row for the bearer token) |

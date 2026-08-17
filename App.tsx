@@ -8,9 +8,12 @@ import { WeekScreen } from "./src/screens/WeekScreen";
 import { GoalsScreen } from "./src/screens/GoalsScreen";
 import { HabitsScreen } from "./src/screens/HabitsScreen";
 import { ExpensesScreen } from "./src/screens/ExpensesScreen";
+import { ReviewScreen } from "./src/screens/ReviewScreen";
 import { loadToken } from "./src/tokenStorage";
 
-type Tab = "dashboard" | "today" | "week" | "goals" | "habits" | "expenses";
+// "review" is deliberately not in TABS — like the web app, it's reached via a link
+// from the Week screen, not a top-level nav item.
+type Tab = "dashboard" | "today" | "week" | "goals" | "habits" | "expenses" | "review";
 
 const TABS: { key: Tab; label: string }[] = [
   { key: "dashboard", label: "Home" },
@@ -48,6 +51,11 @@ export default function App() {
     setActiveTab("today");
   }
 
+  function handleOpenReview(date: string) {
+    setSelectedDate(date);
+    setActiveTab("review");
+  }
+
   if (checkingToken) {
     return (
       <View style={styles.center}>
@@ -71,10 +79,13 @@ export default function App() {
       <View style={styles.screenArea}>
         {activeTab === "dashboard" && <DashboardScreen onLoggedOut={handleLoggedOut} />}
         {activeTab === "today" && <TodayScreen onLoggedOut={handleLoggedOut} initialDate={selectedDate} key={selectedDate} />}
-        {activeTab === "week" && <WeekScreen onLoggedOut={handleLoggedOut} onOpenDay={handleOpenDay} />}
+        {activeTab === "week" && <WeekScreen onLoggedOut={handleLoggedOut} onOpenDay={handleOpenDay} onOpenReview={handleOpenReview} />}
         {activeTab === "goals" && <GoalsScreen onLoggedOut={handleLoggedOut} />}
         {activeTab === "habits" && <HabitsScreen onLoggedOut={handleLoggedOut} />}
         {activeTab === "expenses" && <ExpensesScreen onLoggedOut={handleLoggedOut} />}
+        {activeTab === "review" && (
+          <ReviewScreen onLoggedOut={handleLoggedOut} initialDate={selectedDate} onBack={() => setActiveTab("week")} />
+        )}
       </View>
       <View style={styles.tabBar}>
         {TABS.map((tab) => (

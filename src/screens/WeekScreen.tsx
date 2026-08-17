@@ -14,7 +14,15 @@ import {
 import { clearToken } from "../tokenStorage";
 import { addDays, todayKey } from "../dateUtils";
 
-export function WeekScreen({ onLoggedOut, onOpenDay }: { onLoggedOut: () => void; onOpenDay: (date: string) => void }) {
+export function WeekScreen({
+  onLoggedOut,
+  onOpenDay,
+  onOpenReview,
+}: {
+  onLoggedOut: () => void;
+  onOpenDay: (date: string) => void;
+  onOpenReview: (date: string) => void;
+}) {
   const [anchorDate, setAnchorDate] = useState(todayKey());
   const [data, setData] = useState<WeekResponse | null>(null);
   const [loading, setLoading] = useState(true);
@@ -139,8 +147,15 @@ export function WeekScreen({ onLoggedOut, onOpenDay }: { onLoggedOut: () => void
       refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />}
     >
       <View style={styles.header}>
-        <Text style={styles.eyebrow}>{data.isCurrentWeek ? "This week" : "Week"}</Text>
-        <Text style={styles.weekLabel}>{data.weekLabel}</Text>
+        <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start" }}>
+          <View>
+            <Text style={styles.eyebrow}>{data.isCurrentWeek ? "This week" : "Week"}</Text>
+            <Text style={styles.weekLabel}>{data.weekLabel}</Text>
+          </View>
+          <Pressable onPress={() => onOpenReview(anchorDate)}>
+            <Text style={styles.reviewLink}>Weekly review →</Text>
+          </Pressable>
+        </View>
       </View>
       <View style={styles.dayNav}>
         <Pressable style={styles.navButton} onPress={() => setAnchorDate((d) => addDays(d, -7))}>
@@ -248,6 +263,7 @@ const styles = StyleSheet.create({
   header: { marginBottom: 12 },
   eyebrow: { fontSize: 11, fontWeight: "600", color: "#888888", textTransform: "uppercase" },
   weekLabel: { fontSize: 20, fontWeight: "700", color: "#111111" },
+  reviewLink: { fontSize: 12, fontWeight: "600", color: "#c1653f", marginTop: 4 },
   dayNav: { flexDirection: "row", gap: 8, marginBottom: 16 },
   navButton: { borderWidth: 1, borderColor: "#e6e0d2", borderRadius: 8, paddingHorizontal: 10, paddingVertical: 6 },
   navButtonText: { fontSize: 12, color: "#555555" },

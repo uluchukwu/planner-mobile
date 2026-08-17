@@ -187,6 +187,52 @@ export async function deleteExpense(expenseId: string) {
   return authed<{ ok: true }>(`/api/mobile/expenses/${expenseId}`, { method: "DELETE" });
 }
 
+// --- Weekly review ---
+
+export type ReviewFields = {
+  wentWell: string;
+  didntGoWell: string;
+  learned: string;
+  changeNextWeek: string;
+  proudOf: string;
+  carryForward: string;
+};
+export type ReviewGoal = { id: string; title: string; progress: number };
+export type ReviewTask = { id: string; title: string };
+export type NextWeekDay = { dateKey: string; label: string };
+export type ReviewResponse = {
+  weekId: string;
+  weekLabel: string;
+  planned: number;
+  completed: number;
+  completionRate: number;
+  habitsAvgCompletion: number | null;
+  goals: ReviewGoal[];
+  incompleteTasks: ReviewTask[];
+  nextWeekDays: NextWeekDay[];
+  review: ReviewFields;
+};
+
+export async function fetchReview(date?: string): Promise<ReviewResponse> {
+  return authed(`/api/mobile/review${date ? `?date=${date}` : ""}`, { method: "GET" });
+}
+
+export async function saveReview(weekId: string, fields: ReviewFields) {
+  return authed<{ ok: true }>("/api/mobile/review", { method: "POST", body: JSON.stringify({ weekId, ...fields }) });
+}
+
+export async function moveTaskToNextWeek(taskId: string) {
+  return authed<{ ok: true }>(`/api/mobile/tasks/${taskId}/move-next-week`, { method: "POST" });
+}
+
+export async function rescheduleTaskToDate(taskId: string, date: string) {
+  return authed<{ ok: true }>(`/api/mobile/tasks/${taskId}/reschedule`, { method: "POST", body: JSON.stringify({ date }) });
+}
+
+export async function archiveTask(taskId: string) {
+  return authed<{ ok: true }>(`/api/mobile/tasks/${taskId}/archive`, { method: "POST" });
+}
+
 // --- Dashboard ---
 
 export type DashboardResponse = {

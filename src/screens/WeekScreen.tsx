@@ -60,12 +60,12 @@ export function WeekScreen({ onLoggedOut, onOpenDay }: { onLoggedOut: () => void
 
   async function handleTogglePriority(goalId: string) {
     setPriorityError(null);
-    const result = await toggleWeeklyPriority(goalId);
-    if (result.error) {
-      setPriorityError(result.error);
-      return;
+    try {
+      await toggleWeeklyPriority(goalId);
+      await load(anchorDate);
+    } catch (e) {
+      setPriorityError(e instanceof Error ? e.message : "Couldn't update priority.");
     }
-    await load(anchorDate);
   }
 
   async function handleToggleHabit(habitId: string, date: string) {

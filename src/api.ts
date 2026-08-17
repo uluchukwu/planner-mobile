@@ -111,7 +111,7 @@ export async function deleteGoal(goalId: string) {
 }
 
 export async function toggleWeeklyPriority(goalId: string) {
-  return authed<{ error?: string }>(`/api/mobile/goals/${goalId}/priority`, { method: "POST" });
+  return authed<Record<string, never>>(`/api/mobile/goals/${goalId}/priority`, { method: "POST" });
 }
 
 export async function toggleGoalStar(goalId: string) {

@@ -21,7 +21,7 @@ Phase 6 was built in an agreed order: **screens first**, then offline sync, push
 2. `npm install`
 3. `npm run web` for the browser target, or `npm run android` / `npm run ios` for a device/emulator.
 
-**If you're running on a physical device or emulator, not `--web`:** edit `API_BASE_URL` in `src/api.ts`. It's hardcoded to `http://localhost:3100`, which only resolves correctly when the app itself is *also* running in a browser on the same machine (`expo start --web`). A phone or emulator can't reach your dev machine via `localhost` — replace it with your machine's LAN IP, e.g. `http://192.168.1.23:3100`. This is the single most likely thing to cost you a debugging session if missed.
+**If you're running on a physical device or emulator, not `--web`:** the default `API_BASE_URL` in `src/api.ts` is `http://localhost:3100`, which only resolves correctly when the app itself is *also* running in a browser on the same machine (`expo start --web`) — a phone or emulator can't reach your dev machine via `localhost` at all. Override it without touching code: create `.env.local` (gitignored) with `EXPO_PUBLIC_API_BASE_URL=http://192.168.1.23:3100` (your machine's LAN IP) for local dev against a laptop, or `EXPO_PUBLIC_API_BASE_URL=https://your-app.onrender.com` to point at a deployed backend — the latter needs no LAN-IP juggling, since a real device reaching a real public URL isn't limited to the same network. Restart `expo start` after adding or changing `.env.local` (Expo inlines `EXPO_PUBLIC_*` vars at build time, so a running Metro process won't pick up a new one). This is the single most likely thing to cost you a debugging session if missed.
 
 ## What's verified vs. not
 

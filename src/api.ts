@@ -6,9 +6,12 @@ export { getCachedAt } from "./cache";
 // `localhost` resolves to the browser's own machine when running `expo start --web`
 // (the only target verified in this environment — no Android SDK/emulator available),
 // which is correct for that case. A physical device or emulator can't reach your dev
-// machine via "localhost" — replace this with your machine's LAN IP (e.g.
-// "http://192.168.1.23:3100") when testing on a real device.
-export const API_BASE_URL = "http://localhost:3100";
+// machine via "localhost" at all — either set EXPO_PUBLIC_API_BASE_URL (in a gitignored
+// `.env.local`, since Expo inlines EXPO_PUBLIC_* vars at build time with no extra config)
+// to your machine's LAN IP for local dev (e.g. "http://192.168.1.23:3100") or, once the
+// web app is deployed, to its public URL (e.g. "https://planner.onrender.com") — a real
+// device reaching a real hosted backend needs no LAN-IP juggling at all.
+export const API_BASE_URL = process.env.EXPO_PUBLIC_API_BASE_URL ?? "http://localhost:3100";
 
 export class ApiError extends Error {
   status: number;

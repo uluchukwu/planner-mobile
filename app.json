@@ -19,7 +19,9 @@
       "predictiveBackGestureEnabled": false
     },
     "web": {
-      "favicon": "./assets/favicon.png"
+      "themeColor": "#2f5d50",
+      "backgroundColor": "#faf7f1",
+      "description": "A personal productivity & weekly planning app"
     },
     "plugins": [
       "expo-secure-store"

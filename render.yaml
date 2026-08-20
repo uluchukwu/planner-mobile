@@ -1,0 +1,9 @@
+services:
+  - type: web
+    name: planner-mobile
+    runtime: static
+    buildCommand: npm install && npx expo export -p web
+    staticPublishPath: ./dist
+    envVars:
+      - key: EXPO_PUBLIC_API_BASE_URL
+        sync: false
